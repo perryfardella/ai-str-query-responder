@@ -1,0 +1,26 @@
+---
+description: Always consider the PRD in chat instantiations
+globs:
+alwaysApply: true
+---
+
+# AI STR Query Responder - Product Requirements
+
+When working on this project, always reference and consider the Product Requirements Document (PRD) located at `docs/prd.md`. This document contains the complete specification for the AI STR Query Responder application.
+
+## Key Project Context:
+
+- **Purpose**: AI-powered WhatsApp Business autoresponder for short-term rental (STR) properties
+- **Tech Stack**: Next.js, Supabase, Vercel AI SDK, Shadcn UI, Tailwind CSS, Stripe
+- **Core Features**: WhatsApp integration, property management, AI response generation, subscription payments
+- **Target Users**: STR property managers/hosts with 1-50 properties
+
+## Always Consider:
+
+1. **Architecture decisions** should align with the PRD's technical requirements
+2. **Feature implementations** should match the specified user flows and functionality
+3. **UI/UX choices** should serve the target user personas (Busy Host, Property Manager)
+4. **Security and compliance** requirements as outlined in the PRD
+5. **Performance targets** (response time <5s, 100 messages/minute capacity)
+
+When making any code changes, feature additions, or architectural decisions, ensure they align with the goals, scope, and requirements defined in the PRD.
