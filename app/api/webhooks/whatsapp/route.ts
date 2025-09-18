@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import messageStore from "@/lib/message-store";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN!;
 const APP_SECRET = process.env.META_APP_SECRET!;
@@ -14,6 +15,14 @@ export async function GET(request: NextRequest) {
   console.log("Webhook verification attempt:", {
     mode,
     token: token ? "***" : null,
+  });
+
+  // Log verification activity
+  messageStore.addActivity({
+    id: `verify-${Date.now()}`,
+    type: "verification",
+    timestamp: new Date(),
+    data: { mode, success: mode === "subscribe" && token === VERIFY_TOKEN },
   });
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
@@ -118,11 +127,21 @@ async function processMessage(messageData: any) {
         timestamp: message.timestamp,
       });
 
-      // TODO: Store message in database
-      // TODO: Trigger AI processing
-      // TODO: Send automated response if confidence is high
+      // Store message in our message store
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contact = contacts?.find((c: any) => c.wa_id === message.from);
+      messageStore.addMessage({
+        id: message.id,
+        from: message.from,
+        to: metadata.phone_number_id,
+        type: message.type,
+        content: message,
+        timestamp: message.timestamp,
+        receivedAt: new Date(),
+        contactName: contact?.profile?.name,
+      });
 
-      // For now, just log the message content
+      // Log message content for debugging
       if (message.type === "text") {
         console.log("Message text:", message.text.body);
       } else if (message.type === "image") {
@@ -132,6 +151,9 @@ async function processMessage(messageData: any) {
       } else {
         console.log("Other message type:", message.type);
       }
+
+      // TODO: Trigger AI processing
+      // TODO: Send automated response if confidence is high
     }
   }
 
@@ -143,6 +165,15 @@ async function processMessage(messageData: any) {
         status: status.status,
         timestamp: status.timestamp,
       });
+
+      // Log status update as activity
+      messageStore.addActivity({
+        id: `status-${status.id}-${Date.now()}`,
+        type: "status",
+        timestamp: new Date(),
+        data: status,
+      });
+
       // TODO: Update message status in database
     }
   }
