@@ -92,22 +92,58 @@ function verifyWebhookSignature(
 async function processWebhookData(data: any) {
   console.log("Processing webhook data:", JSON.stringify(data, null, 2));
 
-  if (data.object !== "whatsapp_business_account") {
-    console.log("Ignoring non-WhatsApp webhook");
+  // Log ALL webhook data to the message store for debugging
+  messageStore.addActivity({
+    id: `webhook-${Date.now()}`,
+    type: "verification",
+    timestamp: new Date(),
+    data: {
+      type: "webhook_received",
+      payload: data,
+      object: data.object,
+      hasEntry: !!data.entry,
+      hasField: !!data.field,
+      payloadSize: JSON.stringify(data).length,
+    },
+  });
+
+  // Handle any webhook data - don't filter by object type for debugging
+  console.log("Webhook object type:", data.object);
+  console.log("Webhook has entry:", !!data.entry);
+  console.log("Webhook has field:", !!data.field);
+
+  // Process WhatsApp Business Account webhooks
+  if (data.object === "whatsapp_business_account" && data.entry) {
+    console.log("Processing WhatsApp Business Account webhook");
+    for (const entry of data.entry) {
+      for (const change of entry.changes) {
+        if (change.field === "messages") {
+          await processMessage(change.value);
+        } else if (change.field === "message_template_status_update") {
+          console.log("Template status update:", change.value);
+        } else {
+          console.log("Unhandled webhook field:", change.field);
+        }
+      }
+    }
     return;
   }
 
-  for (const entry of data.entry) {
-    for (const change of entry.changes) {
-      if (change.field === "messages") {
-        await processMessage(change.value);
-      } else if (change.field === "message_template_status_update") {
-        console.log("Template status update:", change.value);
-      } else {
-        console.log("Unhandled webhook field:", change.field);
-      }
+  // Handle test format or other webhook types
+  if (data.field && data.value) {
+    console.log("Processing test/direct webhook format");
+    if (data.field === "messages") {
+      await processMessage(data.value);
+    } else {
+      console.log("Unhandled test webhook field:", data.field);
     }
+    return;
   }
+
+  // Log unrecognized webhook format
+  console.log("Unrecognized webhook format - logging for debugging");
+  console.log("Data keys:", Object.keys(data));
+  console.log("Data:", data);
 }
 
 // TODO

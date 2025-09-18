@@ -228,54 +228,93 @@ export default function Home() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Webhook Activities ({messageData.activities.length})
+                All Webhook Data ({messageData.activities.length})
               </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Raw webhook payloads for debugging
+              </p>
             </div>
             <div className="p-6">
               {messageData.activities.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500 dark:text-gray-400 mb-2">
-                    No webhook activities yet
+                    No webhook data received yet
                   </p>
                   <p className="text-sm text-gray-400">
-                    Webhook verifications and message events will appear here
+                    Send test data or real WhatsApp messages to see webhook
+                    payloads here
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                   {messageData.activities.map((activity) => (
                     <div
                       key={activity.id}
-                      className="border-l-4 border-blue-500 pl-4 py-2"
+                      className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
                     >
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
                           <span
                             className={`text-xs px-2 py-1 rounded font-medium ${
-                              activity.type === "message"
+                              activity.data.type === "webhook_received"
+                                ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                : activity.type === "message"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                                 : activity.type === "verification"
                                 ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                                 : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                             }`}
                           >
-                            {activity.type}
+                            {activity.data.type || activity.type}
                           </span>
+                          {activity.data.object && (
+                            <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                              {activity.data.object}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTimestamp(activity.timestamp)}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                        {activity.type === "message" &&
-                          `Message from ${activity.data.from}`}
-                        {activity.type === "verification" &&
-                          `Webhook verification ${
-                            activity.data.success ? "succeeded" : "failed"
-                          }`}
-                        {activity.type === "status" &&
-                          `Status update: ${activity.data.status}`}
-                      </div>
+
+                      {/* Show webhook payload details */}
+                      {activity.data.type === "webhook_received" && (
+                        <div className="space-y-2">
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Object:</span>{" "}
+                            {activity.data.object || "undefined"} |
+                            <span className="font-medium"> Has Entry:</span>{" "}
+                            {activity.data.hasEntry ? "Yes" : "No"} |
+                            <span className="font-medium"> Has Field:</span>{" "}
+                            {activity.data.hasField ? "Yes" : "No"} |
+                            <span className="font-medium"> Size:</span>{" "}
+                            {activity.data.payloadSize} bytes
+                          </div>
+                          <details className="mt-2">
+                            <summary className="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:text-gray-900 dark:hover:text-gray-100">
+                              View Full Payload
+                            </summary>
+                            <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-auto max-h-48">
+                              {JSON.stringify(activity.data.payload, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+
+                      {/* Show other activity types */}
+                      {activity.data.type !== "webhook_received" && (
+                        <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          {activity.type === "message" &&
+                            `Message from ${activity.data.from}`}
+                          {activity.type === "verification" &&
+                            `Webhook verification ${
+                              activity.data.success ? "succeeded" : "failed"
+                            }`}
+                          {activity.type === "status" &&
+                            `Status update: ${activity.data.status}`}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
