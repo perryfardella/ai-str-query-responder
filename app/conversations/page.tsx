@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import type { Conversation, Message } from "@/lib/supabase";
 
 interface ConversationWithMessages extends Conversation {
@@ -26,31 +25,17 @@ export default function ConversationsPage() {
 
   const fetchConversations = async () => {
     try {
-      const { data, error } = await supabase
-        .from("conversations")
-        .select(
-          `
-          *,
-          phone_number_property_links (
-            properties (
-              name
-            )
-          )
-        `
-        )
-        .order("last_message_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
+      const response = await fetch("/api/conversations");
+      const data = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch conversations");
+      }
 
-      const conversationsWithPropertyNames = data.map((conv) => ({
-        ...conv,
-        property_name: conv.phone_number_property_links?.properties?.name,
-      }));
-
-      setConversations(conversationsWithPropertyNames);
+      setConversations(data.conversations || []);
     } catch (error) {
       console.error("Error fetching conversations:", error);
+      setConversations([]);
     } finally {
       setIsLoading(false);
     }
@@ -59,14 +44,16 @@ export default function ConversationsPage() {
   const fetchMessages = async (conversationId: number) => {
     setMessagesLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("timestamp_whatsapp", { ascending: true });
+      const response = await fetch(
+        `/api/conversations/${conversationId}/messages`
+      );
+      const data = await response.json();
 
-      if (error) throw error;
-      setMessages(data || []);
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch messages");
+      }
+
+      setMessages(data.messages || []);
     } catch (error) {
       console.error("Error fetching messages:", error);
       setMessages([]);
