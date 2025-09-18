@@ -136,6 +136,37 @@ export default function Home() {
               >
                 Debug Database
               </a>
+              <a
+                href="/api/debug/ai-test"
+                target="_blank"
+                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+              >
+                Test AI
+              </a>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/debug/fix-phone-link", {
+                      method: "POST",
+                    });
+                    const result = await response.json();
+                    alert(
+                      result.success
+                        ? `✅ ${result.message}`
+                        : `❌ ${result.error}`
+                    );
+                  } catch (error) {
+                    alert(
+                      `❌ Error: ${
+                        error instanceof Error ? error.message : "Unknown error"
+                      }`
+                    );
+                  }
+                }}
+                className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 transition-colors"
+              >
+                Fix Phone Link
+              </button>
               <button
                 onClick={fetchMessages}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"

@@ -362,12 +362,22 @@ async function processMessage(messageData: WhatsAppMessageData) {
           }
 
           // Trigger AI processing if auto-response is enabled and we have text content
+          console.log("AI Processing Check:", {
+            autoRespondEnabled,
+            hasPropertyInfo: !!propertyInfo,
+            messageType: message.type,
+            hasMessageText: !!processedMessage.message_text,
+            messageText: processedMessage.message_text,
+            willTriggerAI: autoRespondEnabled && propertyInfo &&
+              message.type === "text" && processedMessage.message_text,
+          });
+
           if (
             autoRespondEnabled && propertyInfo && message.type === "text" &&
             processedMessage.message_text
           ) {
             console.log(
-              "Triggering AI processing for message:",
+              "✅ Triggering AI processing for message:",
               savedMessage.id,
             );
 

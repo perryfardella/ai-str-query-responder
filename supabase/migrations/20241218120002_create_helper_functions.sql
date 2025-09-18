@@ -112,7 +112,7 @@ returns table (
   property_id bigint,
   property_name text,
   auto_respond_enabled boolean,
-  property_details jsonb
+  property_details json
 )
 language plpgsql
 security invoker
@@ -132,7 +132,7 @@ begin
       'house_rules', public.properties.house_rules,
       'emergency_contact', public.properties.emergency_contact,
       'custom_instructions', public.properties.custom_instructions
-    ) as property_details
+    )::json as property_details
   from public.phone_number_property_links
   join public.properties on public.properties.id = public.phone_number_property_links.property_id
   where public.phone_number_property_links.customer_phone_number = p_customer_phone
