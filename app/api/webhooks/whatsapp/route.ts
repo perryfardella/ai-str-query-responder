@@ -237,13 +237,9 @@ async function processMessage(messageData: WhatsAppMessageData) {
           message.from,
         );
 
-        // If no property link exists yet, default to auto-respond enabled for testing
-        if (!autoRespondEnabled) {
-          console.log(
-            "No property link found, defaulting to auto-respond enabled for testing",
-          );
-          autoRespondEnabled = true;
-        }
+        // For testing, always enable auto-respond
+        console.log("Original auto-respond status:", autoRespondEnabled);
+        autoRespondEnabled = true;
 
         console.log("Auto-respond enabled:", autoRespondEnabled);
 
