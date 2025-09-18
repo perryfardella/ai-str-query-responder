@@ -78,6 +78,8 @@ function verifyWebhookSignature(
   }
 }
 
+// TODO
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processWebhookData(data: any) {
   console.log("Processing webhook data:", JSON.stringify(data, null, 2));
 
@@ -99,6 +101,8 @@ async function processWebhookData(data: any) {
   }
 }
 
+// TODO
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processMessage(messageData: any) {
   console.log("Processing message data:", JSON.stringify(messageData, null, 2));
 
