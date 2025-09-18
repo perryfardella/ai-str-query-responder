@@ -331,6 +331,16 @@ export default function Home() {
               /api/webhooks/whatsapp
             </code>
           </p>
+          <div className="mt-4 flex justify-center space-x-4">
+            <a
+              href="/privacy-policy"
+              className="hover:text-gray-700 dark:hover:text-gray-300 underline"
+            >
+              Privacy Policy
+            </a>
+            <span>•</span>
+            <span>© {new Date().getFullYear()} AI STR Query Responder</span>
+          </div>
         </footer>
       </div>
     </div>
