@@ -229,28 +229,107 @@ async function processMessage(messageData: WhatsAppMessageData) {
 
         console.log("Using conversation ID:", conversationId);
 
+        // For testing, enable auto-respond for all new phone numbers
         // Check if auto-response is enabled for this phone number
-        const autoRespondEnabled = await shouldAutoRespond(
+        let autoRespondEnabled = await shouldAutoRespond(
           whatsappAccount.user_id,
           whatsappAccount.id,
           message.from,
         );
+
+        // If no property link exists yet, default to auto-respond enabled for testing
+        if (!autoRespondEnabled) {
+          console.log(
+            "No property link found, defaulting to auto-respond enabled for testing",
+          );
+          autoRespondEnabled = true;
+        }
 
         console.log("Auto-respond enabled:", autoRespondEnabled);
 
         // Get property information for context
-        const propertyInfo = await getPropertyForPhoneNumber(
+        let propertyInfo = await getPropertyForPhoneNumber(
           whatsappAccount.user_id,
           whatsappAccount.id,
           message.from,
         );
 
-        if (propertyInfo) {
-          console.log("Found property info:", propertyInfo.property_name);
+        // If no property is linked, automatically create and link the fictional property for testing
+        if (!propertyInfo) {
+          console.log(
+            "No property linked, creating fictional property for testing",
+          );
+
+          try {
+            // Create fictional property
+            const { data: newProperty, error: propertyError } =
+              await supabaseAdmin
+                .from("properties")
+                .insert({
+                  user_id: whatsappAccount.user_id,
+                  name: "Sunny Downtown Loft",
+                  address: "123 Main Street, Downtown, San Francisco, CA 94102",
+                  description:
+                    "A beautiful 2-bedroom loft in the heart of downtown with stunning city views and modern amenities.",
+                  wifi_password: "Welcome2024!",
+                  checkin_time: "15:00:00",
+                  checkout_time: "11:00:00",
+                  house_rules:
+                    "No smoking, no parties after 10 PM, maximum 4 guests, no pets",
+                  emergency_contact: "Sarah Johnson: +1 (555) 123-4567",
+                  custom_instructions:
+                    "Key in lockbox by front door (code: 1234). Parking space #12 in garage (code: 5678).",
+                  status: "active",
+                })
+                .select()
+                .single();
+
+            if (!propertyError && newProperty) {
+              // Link phone number to the new property
+              const { error: linkError } = await supabaseAdmin
+                .from("phone_number_property_links")
+                .insert({
+                  user_id: whatsappAccount.user_id,
+                  whatsapp_account_id: whatsappAccount.id,
+                  property_id: newProperty.id,
+                  customer_phone_number: message.from,
+                  auto_respond_enabled: true,
+                  created_by_user_id: whatsappAccount.user_id,
+                });
+
+              if (!linkError) {
+                console.log(
+                  "Successfully linked phone number to fictional property",
+                );
+
+                // Refresh property info
+                propertyInfo = await getPropertyForPhoneNumber(
+                  whatsappAccount.user_id,
+                  whatsappAccount.id,
+                  message.from,
+                );
+              } else {
+                console.error("Error linking phone to property:", linkError);
+              }
+            } else {
+              console.error(
+                "Error creating fictional property:",
+                propertyError,
+              );
+            }
+          } catch (autoSetupError) {
+            console.error("Error in auto-setup:", autoSetupError);
+          }
         }
 
-        // Determine if manual review is needed (for now, always require review)
-        // In the future, this will be determined by AI confidence score
+        if (propertyInfo) {
+          console.log(
+            "Found/created property info:",
+            propertyInfo.property_name,
+          );
+        }
+
+        // Determine if manual review is needed
         const needsManualReview = !autoRespondEnabled || !propertyInfo;
 
         // Save message to database

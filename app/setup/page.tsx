@@ -304,30 +304,76 @@ export default function SetupPage() {
           </div>
         </div>
 
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">
-            Quick Setup Guide
-          </h3>
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
-            <p>
-              <strong>1. Get your User ID:</strong> Create a Supabase user
-              account first
-            </p>
-            <p>
-              <strong>2. WABA ID:</strong> From your webhook payload, use the
-              &quot;entry[0].id&quot; value:{" "}
-              <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
-                1281481666794121
-              </code>
-            </p>
-            <p>
-              <strong>3. Access Token:</strong> Get this from your Meta
-              Developer Dashboard
-            </p>
-            <p>
-              <strong>4. Test:</strong> After setup, send another WhatsApp
-              message to test
-            </p>
+        <div className="mt-8 space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">
+              Quick Setup Guide
+            </h3>
+            <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+              <p>
+                <strong>1. Get your User ID:</strong> Create a Supabase user
+                account first
+              </p>
+              <p>
+                <strong>2. WABA ID:</strong> From your webhook payload, use the
+                &quot;entry[0].id&quot; value:{" "}
+                <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">
+                  1281481666794121
+                </code>
+              </p>
+              <p>
+                <strong>3. Access Token:</strong> Get this from your Meta
+                Developer Dashboard
+              </p>
+              <p>
+                <strong>4. Test:</strong> After setup, send another WhatsApp
+                message to test
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-4">
+              🤖 Enable Automatic AI Responses
+            </h3>
+            <div className="text-sm text-green-800 dark:text-green-200 space-y-3">
+              <p>
+                <strong>
+                  After setting up your WhatsApp account above, enable AI
+                  auto-responses:
+                </strong>
+              </p>
+              <div className="bg-green-100 dark:bg-green-800 p-4 rounded-lg">
+                <p className="font-medium mb-2">Quick Enable (for testing):</p>
+                <p>Send a POST request to:</p>
+                <code className="block bg-green-200 dark:bg-green-700 p-2 rounded mt-1 text-xs">
+                  POST /api/setup/property-link
+                </code>
+                <p className="mt-2">With JSON body:</p>
+                <pre className="text-xs bg-green-200 dark:bg-green-700 p-2 rounded mt-1">
+                  {`{
+  "user_id": "your-user-id",
+  "whatsapp_account_id": 1,
+  "customer_phone_number": "61405944562",
+  "property_name": "Sunny Downtown Loft",
+  "auto_respond_enabled": true
+}`}
+                </pre>
+              </div>
+              <div className="space-y-1">
+                <p>
+                  <strong>What this does:</strong>
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    Creates a fictional property with WiFi, check-in info, etc.
+                  </li>
+                  <li>Links your phone number (61405944562) to the property</li>
+                  <li>Enables automatic AI responses</li>
+                  <li>AI will respond to high-confidence questions (95%+)</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
