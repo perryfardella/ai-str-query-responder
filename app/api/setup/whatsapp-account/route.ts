@@ -30,17 +30,23 @@ export async function POST(request: NextRequest) {
         // Insert or update WhatsApp Business Account
         const { data, error } = await supabaseAdmin
             .from("whatsapp_business_accounts")
-            .upsert({
-                user_id,
-                waba_id,
-                phone_number_id,
-                display_phone_number,
-                access_token,
-                business_name: business_name || null,
-                status: "active",
-                webhook_verified: true,
-                metadata: {},
-            })
+            .upsert(
+                {
+                    user_id,
+                    waba_id,
+                    phone_number_id,
+                    display_phone_number,
+                    access_token,
+                    business_name: business_name || null,
+                    status: "active",
+                    webhook_verified: true,
+                    metadata: {},
+                    updated_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: "phone_number_id",
+                },
+            )
             .select()
             .single();
 

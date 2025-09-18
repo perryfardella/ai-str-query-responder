@@ -91,7 +91,15 @@ export default function ConversationsPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to send message");
+        // Handle specific error types
+        if (result.token_expired) {
+          alert(
+            `⚠️ WhatsApp Access Token Expired!\n\n${result.details}\n\nPlease go to the Setup page to update your access token.`
+          );
+        } else {
+          alert(`Failed to send message: ${result.error || "Unknown error"}`);
+        }
+        return;
       }
 
       // Clear the input
@@ -106,7 +114,7 @@ export default function ConversationsPage() {
       console.error("Error sending message:", error);
       alert(
         `Failed to send message: ${
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : "Network error"
         }`
       );
     } finally {

@@ -197,9 +197,15 @@ export default function SetupPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  From Meta Developer Dashboard
-                </p>
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-gray-500">
+                    From Meta Developer Dashboard
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    ⚠️ Access tokens expire periodically - update here if
+                    message sending fails
+                  </p>
+                </div>
               </div>
 
               <div>

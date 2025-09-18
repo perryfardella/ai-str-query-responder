@@ -82,10 +82,26 @@ export async function POST(
 
         if (!whatsappResponse.ok) {
             console.error("WhatsApp API error:", whatsappResult);
+
+            // Check if it's a token expiration error
+            if (whatsappResult.error?.code === 190) {
+                return NextResponse.json(
+                    {
+                        error: "WhatsApp access token has expired",
+                        details:
+                            "Please update your access token in the setup page",
+                        error_code: 190,
+                        token_expired: true,
+                    },
+                    { status: 401 },
+                );
+            }
+
             return NextResponse.json(
                 {
                     error: "Failed to send message via WhatsApp",
                     details: whatsappResult.error?.message || "Unknown error",
+                    error_code: whatsappResult.error?.code,
                 },
                 { status: 500 },
             );
