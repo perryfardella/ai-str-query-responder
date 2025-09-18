@@ -18,6 +18,8 @@ export default function ConversationsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -65,6 +67,58 @@ export default function ConversationsPage() {
   const selectConversation = (conversation: ConversationWithMessages) => {
     setSelectedConversation(conversation);
     fetchMessages(conversation.id);
+    setNewMessage(""); // Clear message input when switching conversations
+  };
+
+  const sendMessage = async () => {
+    if (!selectedConversation || !newMessage.trim() || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const response = await fetch(
+        `/api/conversations/${selectedConversation.id}/send-message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: newMessage.trim() }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send message");
+      }
+
+      // Clear the input
+      setNewMessage("");
+
+      // Refresh messages to show the sent message
+      await fetchMessages(selectedConversation.id);
+
+      // Refresh conversations to update last message info
+      await fetchConversations();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert(
+        `Failed to send message: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -165,8 +219,8 @@ export default function ConversationsPage() {
                             {conversation.customer_phone_number}
                           </span>
                           {conversation.requires_manual_intervention && (
-                            <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded">
-                              Needs Attention
+                            <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded animate-pulse">
+                              🚨 Needs Attention
                             </span>
                           )}
                         </div>
@@ -266,7 +320,7 @@ export default function ConversationsPage() {
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.direction === "inbound"
                                 ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
-                                : "bg-blue-500 text-white"
+                                : "bg-blue-500 text-white shadow-lg"
                             }`}
                           >
                             <div className="text-sm">
@@ -304,12 +358,35 @@ export default function ConversationsPage() {
                   )}
                 </div>
 
-                {/* Message Input (Future Enhancement) */}
+                {/* Message Input */}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Message sending will be available in a future update
-                    </p>
+                  <div className="flex gap-2">
+                    <textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                      rows={2}
+                      disabled={isSending}
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={!newMessage.trim() || isSending}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isSending ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Sending...
+                        </div>
+                      ) : (
+                        "Send"
+                      )}
+                    </button>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Messages will be sent via WhatsApp Business API
                   </div>
                 </div>
               </>
