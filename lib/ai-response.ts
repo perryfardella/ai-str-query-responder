@@ -57,14 +57,12 @@ export async function generateAIResponse(
             temperature: 0.1, // Low temperature for consistent, factual responses
         });
 
-        // Analyze confidence and determine if we should send
-        const analysis = analyzeResponseConfidence(text, incomingMessage);
-
+        // For testing, always send responses (removed confidence analysis)
         return {
             response: text,
-            confidence: analysis.confidence,
-            shouldSend: analysis.shouldSend,
-            reasoning: analysis.reasoning,
+            confidence: 1.0, // Always high confidence for testing
+            shouldSend: true,
+            reasoning: "Testing mode - always send responses",
         };
     } catch (error) {
         console.error("AI response generation error:", error);

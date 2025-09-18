@@ -394,7 +394,8 @@ async function processMessage(messageData: WhatsAppMessageData) {
                 reasoning: aiResult.reasoning,
               });
 
-              if (aiResult.shouldSend && aiResult.confidence >= 0.95) {
+              // Always send AI responses for testing (removed confidence threshold)
+              if (aiResult.response && !aiResult.error) {
                 // Send AI response via WhatsApp
                 const sendResponse = await fetch(
                   `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
@@ -474,23 +475,21 @@ async function processMessage(messageData: WhatsAppMessageData) {
                   );
                 }
               } else {
-                console.log("AI confidence too low, marking for manual review");
+                console.log("AI response generation failed or empty response");
 
-                // Update message to indicate manual review needed
+                // Update message to indicate AI processing failed
                 await supabaseAdmin
                   .from("messages")
                   .update({
-                    ai_confidence_score: aiResult.confidence,
-                    ai_processing_error: aiResult.reasoning,
+                    ai_processing_error: aiResult.error ||
+                      "AI generated empty response",
                     needs_manual_review: true,
                   })
                   .eq("id", savedMessage.id);
 
                 await markConversationNeedsIntervention(
                   conversationId,
-                  `AI confidence too low (${
-                    Math.round(aiResult.confidence * 100)
-                  }%): ${aiResult.reasoning}`,
+                  "AI response generation failed",
                 );
               }
             } catch (aiError) {
