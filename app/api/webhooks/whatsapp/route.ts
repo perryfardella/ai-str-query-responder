@@ -13,6 +13,8 @@ import {
   updateMessageStatus,
   type WhatsAppMessageData,
 } from "@/lib/whatsapp-db";
+import { generateAIResponse } from "@/lib/ai-response";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN!;
 const APP_SECRET = process.env.META_APP_SECRET!;
@@ -284,8 +286,148 @@ async function processMessage(messageData: WhatsAppMessageData) {
             );
           }
 
-          // TODO: Trigger AI processing if auto-response is enabled
-          // TODO: Send automated response if confidence is high
+          // Trigger AI processing if auto-response is enabled and we have text content
+          if (
+            autoRespondEnabled && propertyInfo && message.type === "text" &&
+            processedMessage.message_text
+          ) {
+            console.log(
+              "Triggering AI processing for message:",
+              savedMessage.id,
+            );
+
+            try {
+              const aiResult = await generateAIResponse(
+                conversationId,
+                processedMessage.message_text,
+                propertyInfo.property_id,
+              );
+
+              console.log("AI processing result:", {
+                confidence: aiResult.confidence,
+                shouldSend: aiResult.shouldSend,
+                reasoning: aiResult.reasoning,
+              });
+
+              if (aiResult.shouldSend && aiResult.confidence >= 0.95) {
+                // Send AI response via WhatsApp
+                const sendResponse = await fetch(
+                  `https://graph.facebook.com/v18.0/${metadata.phone_number_id}/messages`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${whatsappAccount.access_token}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      messaging_product: "whatsapp",
+                      to: message.from,
+                      type: "text",
+                      text: { body: aiResult.response },
+                    }),
+                  },
+                );
+
+                const sendResult = await sendResponse.json();
+
+                if (sendResponse.ok) {
+                  console.log(
+                    "AI response sent successfully:",
+                    sendResult.messages[0].id,
+                  );
+
+                  // Save the AI response as an outbound message
+                  const aiMessageData = {
+                    whatsapp_message_id: sendResult.messages[0].id,
+                    direction: "outbound" as const,
+                    from_phone_number: metadata.display_phone_number,
+                    to_phone_number: message.from,
+                    message_type: "text",
+                    content: {
+                      text: { body: aiResult.response },
+                      type: "text",
+                    },
+                    message_text: aiResult.response,
+                    timestamp_whatsapp: new Date().toISOString(),
+                  };
+
+                  await saveMessage(
+                    conversationId,
+                    aiMessageData,
+                    true, // is_auto_response
+                    false, // needs_manual_review
+                    aiResult.confidence,
+                    undefined,
+                  );
+
+                  // Update conversation with AI response
+                  await updateConversationLastMessage(
+                    conversationId,
+                    "outbound",
+                    aiMessageData.timestamp_whatsapp,
+                    false,
+                  );
+
+                  console.log("AI response saved to database");
+                } else {
+                  console.error("Failed to send AI response:", sendResult);
+
+                  // Update original message to indicate AI processing failed
+                  await supabaseAdmin
+                    .from("messages")
+                    .update({
+                      ai_processing_error: `Failed to send AI response: ${
+                        sendResult.error?.message || "Unknown error"
+                      }`,
+                      needs_manual_review: true,
+                    })
+                    .eq("id", savedMessage.id);
+
+                  await markConversationNeedsIntervention(
+                    conversationId,
+                    "AI response generation succeeded but sending failed",
+                  );
+                }
+              } else {
+                console.log("AI confidence too low, marking for manual review");
+
+                // Update message to indicate manual review needed
+                await supabaseAdmin
+                  .from("messages")
+                  .update({
+                    ai_confidence_score: aiResult.confidence,
+                    ai_processing_error: aiResult.reasoning,
+                    needs_manual_review: true,
+                  })
+                  .eq("id", savedMessage.id);
+
+                await markConversationNeedsIntervention(
+                  conversationId,
+                  `AI confidence too low (${
+                    Math.round(aiResult.confidence * 100)
+                  }%): ${aiResult.reasoning}`,
+                );
+              }
+            } catch (aiError) {
+              console.error("AI processing error:", aiError);
+
+              // Update message to indicate AI processing failed
+              await supabaseAdmin
+                .from("messages")
+                .update({
+                  ai_processing_error: aiError instanceof Error
+                    ? aiError.message
+                    : "AI processing failed",
+                  needs_manual_review: true,
+                })
+                .eq("id", savedMessage.id);
+
+              await markConversationNeedsIntervention(
+                conversationId,
+                "AI processing failed",
+              );
+            }
+          }
         }
 
         // Log message content for debugging

@@ -20,6 +20,9 @@ export default function ConversationsPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [aiTesting, setAiTesting] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [aiTestResult, setAiTestResult] = useState<any>(null);
 
   useEffect(() => {
     fetchConversations();
@@ -126,6 +129,32 @@ export default function ConversationsPage() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const testAIResponse = async () => {
+    if (!selectedConversation || aiTesting) return;
+
+    setAiTesting(true);
+    setAiTestResult(null);
+
+    try {
+      const testMessage = "What is the WiFi password?";
+      const response = await fetch(
+        `/api/conversations/${
+          selectedConversation.id
+        }/ai-response?message=${encodeURIComponent(testMessage)}`
+      );
+
+      const result = await response.json();
+      setAiTestResult(result);
+    } catch (error) {
+      setAiTestResult({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setAiTesting(false);
     }
   };
 
@@ -285,7 +314,14 @@ export default function ConversationsPage() {
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={testAIResponse}
+                        disabled={aiTesting}
+                        className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50 transition-colors"
+                      >
+                        {aiTesting ? "Testing..." : "Test AI"}
+                      </button>
                       <div
                         className={`text-xs px-2 py-1 rounded ${
                           selectedConversation.requires_manual_intervention
@@ -300,6 +336,56 @@ export default function ConversationsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* AI Test Result */}
+                {aiTestResult && (
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div
+                      className={`p-3 rounded-lg text-sm ${
+                        aiTestResult.success
+                          ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200"
+                          : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <strong>AI Test Result</strong>
+                        <button
+                          onClick={() => setAiTestResult(null)}
+                          className="text-xs opacity-60 hover:opacity-100"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {aiTestResult.success ? (
+                        <div className="space-y-2">
+                          <p>
+                            <strong>Response:</strong>{" "}
+                            {aiTestResult.ai_result?.response}
+                          </p>
+                          <p>
+                            <strong>Confidence:</strong>{" "}
+                            {Math.round(
+                              (aiTestResult.ai_result?.confidence || 0) * 100
+                            )}
+                            %
+                          </p>
+                          <p>
+                            <strong>Should Send:</strong>{" "}
+                            {aiTestResult.ai_result?.shouldSend ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Reasoning:</strong>{" "}
+                            {aiTestResult.ai_result?.reasoning}
+                          </p>
+                        </div>
+                      ) : (
+                        <p>
+                          <strong>Error:</strong> {aiTestResult.error}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4">
