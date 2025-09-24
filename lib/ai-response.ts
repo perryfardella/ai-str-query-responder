@@ -140,6 +140,7 @@ Provide a helpful response to the guest's question. Be natural and conversationa
 /**
  * Analyze response confidence and determine if we should auto-send
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function analyzeResponseConfidence(response: string, originalMessage: string): {
     confidence: number;
     shouldSend: boolean;

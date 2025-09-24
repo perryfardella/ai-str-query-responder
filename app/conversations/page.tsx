@@ -37,7 +37,6 @@ export default function ConversationsPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
   const messageChannelRef = useRef<RealtimeChannel | null>(null);
@@ -316,7 +315,7 @@ export default function ConversationsPage() {
               </p>
             </div>
             <Button asChild variant="outline">
-              <Link href="/">
+              <Link href="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
               </Link>
